@@ -11,14 +11,21 @@ fake_users=pd.read_csv(sample_data)
 example_user_id=1
 connections=pd.read_csv("connections_data.csv")
 
-
+# personality_weights={}
 
 # 1. Query all profile
 # 2. Put the profiles into the pandas dataset
 
+# The
+
+
 class Recommendation:
     def __init__(self,user_id):
         self.big5=["Extraversion","Agreeableness","Conscientiousness","Neuroticism","Openness"]
+        importance_index={"Openness":0.9,"Extraversion":0.8,"Agreeableness":0.7,"Neuroticism":0.5,"Conscientiousness":0.4}
+        diversity_inverse={"Openness":False,"Extraversion":False,"Agreeableness":False,"Neuroticism":True,"Conscientiousness":True}
+        
+        
         # self.
         self.df=fake_users
         self.connections=connections
@@ -33,8 +40,9 @@ class Recommendation:
         outputs: sorted dictionary with similarity scores between target user and each other user
         """
         recommendation=self.main_recommender(self.user_id,self.overall_scores,self.df)
-
+        print(recommendation)
         sorted_recommendation=self.sorted_dictionary(recommendation)
+        print( sorted_recommendation)
         return self.take(n,sorted_recommendation.items())
 
     def take(self,n, iterable):
@@ -54,6 +62,7 @@ class Recommendation:
     #   load the dataset 
         self.personality_language(df)
         self.skills_analyser(df)
+        print(self.overall_scores)
 
 
         self.count_mutual_connections()
@@ -85,10 +94,18 @@ class Recommendation:
         #         print("Next User")
                 mean_difference=0
                 for i in big5:
+                    else:
                     mean_difference+=abs(user_qualities[i]-row[i])
+                    for s in big5:
+#                         compare each trait to other trait to check the diversity 
                 mean_difference/=len(big5)
-                users_mean_difference.append([index,10-mean_difference])
-                self.overall_scores[index]=10-mean_difference
+                
+                if i=="Neuroticism":
+                    users_mean_difference.append([index,(mean_difference)])
+                    self.overall_scores[index]=(mean_difference)*importance_index[i]
+                else: 
+                    users_mean_difference.append([index,(10-mean_difference)])
+                    self.overall_scores[index]=(10-mean_difference)*importance_index[i]
 
 
             
@@ -122,6 +139,7 @@ class Recommendation:
 
 
         user_connections=[]
+        print(self.connections.head())
 
 
         for index, row in self.connections.iterrows():
@@ -143,6 +161,7 @@ class Recommendation:
                         mutual_connections[row["connection"]]+=1
                     except KeyError:
                         mutual_connections[row["connection"]] = 1
+        print(mutual_connections)
         for key,value in mutual_connections.items():
             # add all connections to the overall score
             if key<1000:
